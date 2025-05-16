@@ -1,0 +1,24 @@
+name: Test Release Locator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install jq
+        run: sudo apt-get install -y jq
+      
+      - name: Test the action
+        uses: ./
+        with:
+          repository: 'wippyai/module-hello'
+          tag: 'v1.0.0'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          module_id: ${{ secrets.MODULE_ID }} 
