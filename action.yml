@@ -1,0 +1,84 @@
+name: 'Module Release Locator'
+description: 'Locates and processes release source code from GitHub repositories'
+author: 'WippyAI'
+
+inputs:
+  repository:
+    description: 'The repository to locate release from (e.g., wippyai/module-hello)'
+    required: true
+  tag:
+    description: 'The release tag to locate (e.g., v1.0.0)'
+    required: true
+  token:
+    description: 'GitHub token for authentication'
+    required: true
+  module_id:
+    description: 'The UUID of the module to upload to'
+    required: true
+
+outputs:
+  release_url:
+    description: 'URL of the located release'
+  source_code_url:
+    description: 'URL of the release source code'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+    - shell: bash
+      run: |
+        # Install grpcurl
+        curl -L https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_x86_64.tar.gz | tar xz
+        sudo mv grpcurl /usr/local/bin/
+        
+        # Get release information
+        REPOSITORY="${{ inputs.repository }}"
+        TAG="${{ inputs.tag }}"
+        TOKEN="${{ inputs.token }}"
+        MODULE_ID="${{ inputs.module_id }}"
+        
+        # Split repository into owner and repo
+        IFS='/' read -r OWNER REPO <<< "$REPOSITORY"
+        
+        # GitHub API endpoint
+        API_URL="https://api.github.com/repos/$OWNER/$REPO/releases/tags/$TAG"
+        
+        # Get release information using curl
+        RESPONSE=$(curl -s -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github.v3+json" "$API_URL")
+        
+        # Check if release exists
+        if echo "$RESPONSE" | jq -e '.message == "Not Found"' > /dev/null; then
+            echo "::error::Release $TAG not found in $REPOSITORY"
+            exit 1
+        fi
+        
+        # Extract release URL
+        RELEASE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
+        SOURCE_CODE_URL="https://github.com/$REPOSITORY/archive/refs/tags/$TAG.zip"
+        
+        # Download the source code
+        echo "Downloading source code from $SOURCE_CODE_URL"
+        curl -L -o source.zip "$SOURCE_CODE_URL"
+        
+        # Call the UploadArchive service using grpcurl
+        echo "Uploading archive to modules.wippy.ai"
+        grpcurl -plaintext \
+          -d '{
+            "module_id": "'$MODULE_ID'",
+            "archive_content": "'$(base64 -w 0 source.zip)'",
+            "format": "ARCHIVE_FORMAT_ZIP"
+          }' \
+          modules.wippy.ai:443 \
+          registry.module.v1.UploadService/UploadArchive
+        
+        # Clean up
+        rm source.zip
+        
+        # Set outputs
+        echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+        echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
+        
+        # Log information
+        echo "Found release: $RELEASE_URL"
+        echo "Source code available at: $SOURCE_CODE_URL" 
