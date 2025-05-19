@@ -1,41 +1,92 @@
 # Module Release Locator
 
-This GitHub Action helps locate and process release source code from GitHub repositories. It's particularly useful for finding specific release versions of modules and their associated source code.
+A GitHub Action and local tool for locating and processing release source code from GitHub repositories.
 
-## Inputs
+## Features
 
-### `repository`
+- Locates GitHub releases by repository and tag
+- Downloads release source code
+- Uploads source code to modules.wippy.ai
+- Supports both GitHub Actions and local execution
 
-**Required** The repository to locate release from (e.g., `wippyai/module-hello`).
+## Usage
 
-### `tag`
+### GitHub Action Usage
 
-**Required** The release tag to locate (e.g., `v1.0.0`).
-
-### `token`
-
-**Required** GitHub token for authentication. Use `${{ secrets.GITHUB_TOKEN }}` for public repositories or create a Personal Access Token for private repositories.
-
-## Outputs
-
-### `release_url`
-
-The URL of the located release (e.g., `https://github.com/wippyai/module-hello/releases/tag/v1.0.0`).
-
-### `source_code_url`
-
-The URL of the release source code.
-
-## Example usage
+Add the following to your workflow file (`.github/workflows/your-workflow.yml`):
 
 ```yaml
-uses: your-username/module-release-locator@v1
-with:
-  repository: 'wippyai/module-hello'
-  tag: 'v1.0.0'
-  token: ${{ secrets.GITHUB_TOKEN }}
+name: Release Module
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: wippyai/module-release-locator@v1
+        with:
+          repository: ${{ github.repository }}
+          tag: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          module_id: "your-module-uuid"
 ```
 
-## License
+### Local Testing
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Clone the repository:
+```bash
+git clone https://github.com/wippyai/module-release-locator.git
+cd module-release-locator
+```
+
+2. Make the scripts executable:
+```bash
+chmod +x scripts/*.sh
+```
+
+3. Run the script:
+```bash
+./scripts/main.sh \
+  --repository "owner/repo" \
+  --tag "v1.0.0" \
+  --token "your-github-token" \
+  --module-id "your-module-uuid"
+```
+
+#### Required Parameters
+
+- `--repository`: GitHub repository in format `owner/repo` (e.g., `wippyai/module-hello`)
+- `--tag`: Release tag to locate (e.g., `v1.0.0`)
+- `--token`: GitHub token for authentication
+- `--module-id`: UUID of the module to upload to
+
+#### Dependencies
+
+The script will automatically install required dependencies:
+- grpcurl (for gRPC communication)
+- jq (for JSON processing)
+
+## Output
+
+The script provides the following outputs:
+- Release URL
+- Source code URL
+
+## Error Handling
+
+The script includes error handling for:
+- Missing required parameters
+- Invalid repository/tag combinations
+- Network issues
+- Authentication failures
+
+## Development
+
+To modify the functionality:
+1. Edit the utility functions in `scripts/utils.sh`
+2. Update the main script in `scripts/main.sh`
+3. Test locally using the provided usage instructions
+4. Update the GitHub Action in `action.yml` if needed
