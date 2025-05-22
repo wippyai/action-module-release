@@ -23,3 +23,7 @@ go.work.sum
 
 # env file
 .env
+source.zip
+upload-tool
+/proto/
+/.idea/GitLink.xml

@@ -32,6 +32,8 @@ jobs:
           tag: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
           module_id: "your-module-uuid"
+          username: ${{ secrets.WIPPY_USERNAME }}
+          password: ${{ secrets.WIPPY_PASSWORD }}
 ```
 
 ### Local Testing
@@ -42,18 +44,20 @@ git clone https://github.com/wippyai/module-release-locator.git
 cd module-release-locator
 ```
 
-2. Make the scripts executable:
+2. Make the script executable:
 ```bash
-chmod +x scripts/*.sh
+chmod +x main.sh
 ```
 
 3. Run the script:
 ```bash
-./scripts/main.sh \
+./main.sh \
   --repository "owner/repo" \
   --tag "v1.0.0" \
   --token "your-github-token" \
-  --module-id "your-module-uuid"
+  --module-id "your-module-uuid" \
+  --username "your-wippy-username" \
+  --password "your-wippy-password"
 ```
 
 #### Required Parameters
@@ -62,12 +66,14 @@ chmod +x scripts/*.sh
 - `--tag`: Release tag to locate (e.g., `v1.0.0`)
 - `--token`: GitHub token for authentication
 - `--module-id`: UUID of the module to upload to
+- `--username`: Username for modules.wippy.ai authentication
+- `--password`: Password for modules.wippy.ai authentication
 
 #### Dependencies
 
 The script will automatically install required dependencies:
-- grpcurl (for gRPC communication)
 - jq (for JSON processing)
+- Docker (for building and running the upload tool)
 
 ## Output
 
@@ -86,7 +92,6 @@ The script includes error handling for:
 ## Development
 
 To modify the functionality:
-1. Edit the utility functions in `scripts/utils.sh`
-2. Update the main script in `scripts/main.sh`
-3. Test locally using the provided usage instructions
-4. Update the GitHub Action in `action.yml` if needed
+1. Edit the main script in `main.sh`
+2. Test locally using the provided usage instructions
+3. Update the GitHub Action in `action.yml` if needed

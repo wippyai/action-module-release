@@ -1,0 +1,38 @@
+name: Build and Test Upload Tool
+
+on:
+  push:
+    paths:
+      - 'main.sh'
+      - '.github/workflows/upload.yml'
+  pull_request:
+    paths:
+      - 'main.sh'
+      - '.github/workflows/upload.yml'
+
+env:
+  REPOSITORY: ${{ vars.REPOSITORY }}
+  MODULE_ID: ${{ secrets.MODULE_ID }}
+  USERNAME: ${{ secrets.USERNAME }}
+  PASSWORD: ${{ secrets.PASSWORD }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload module archive
+        run: |
+          if ! ./main.sh \
+            --repository "${{ env.REPOSITORY }}" \
+            --tag "${{ github.ref_name }}" \
+            --module-id "${{ env.MODULE_ID }}" \
+            --username "${{ env.USERNAME }}" \
+            --password "${{ env.PASSWORD }}"; then
+            echo "::error::Failed to upload module archive"
+            exit 1
+          fi 
