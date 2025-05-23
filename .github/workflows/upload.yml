@@ -19,6 +19,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
       
       - name: Install jq
         run: sudo apt-get install -y jq
@@ -28,7 +30,7 @@ jobs:
           if ! ./main.sh \
             --repository 'wippyai/module-hello' \
             --tag 'v1.0.0' \
-            --token ${{ secrets.GITHUB_TOKEN }} \
+            --token ${{ secrets.PRIVATE_REPO_TOKEN }} \
             --module-id ${{ secrets.MODULE_ID }} \
             --username ${{ secrets.WIPPY_USERNAME }} \
             --password ${{ secrets.WIPPY_PASSWORD }}; then
