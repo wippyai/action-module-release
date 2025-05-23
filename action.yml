@@ -23,8 +23,6 @@ inputs:
     required: true
 
 outputs:
-  release_url:
-    description: 'URL of the located release'
   source_code_url:
     description: 'URL of the release source code'
 
@@ -32,14 +30,41 @@ runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v3
-    - shell: bash
-      run: chmod +x ./main.sh
-    - shell: bash
+    - name: Clone proto repository
+      shell: bash
       run: |
-        ./main.sh \
-          --repository "${{ inputs.repository }}" \
-          --tag "${{ inputs.tag }}" \
-          --token "${{ inputs.token }}" \
-          --module-id "${{ inputs.module_id }}" \
-          --username "${{ inputs.username }}" \
-          --password "${{ inputs.password }}" 
+        if [ ! -d "proto" ]; then
+          git clone "https://x-access-token:${{ inputs.token }}@github.com/wippyai/module-registry-proto.git" proto
+        fi
+    - name: Download source code
+      shell: bash
+      run: |
+        SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
+        curl -L -H "Authorization: token ${{ inputs.token }}" -o source.zip "$SOURCE_CODE_URL"
+        echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
+    - name: Build and run upload tool
+      shell: bash
+      run: |
+        # Build the upload tool
+        go mod tidy
+        go build -o upload-tool
+        
+        # Debug information
+        echo "Debug: Uploading archive for module ID: ${{ inputs.module_id }}"
+        echo "Debug: Archive size: $(stat -c %s source.zip) bytes"
+        echo "Debug: Checking upload-tool location:"
+        ls -la upload-tool
+        
+        # Run the upload tool
+        ./upload-tool "${{ inputs.module_id }}" "${{ inputs.tag }}" "source.zip" "${{ inputs.username }}" "${{ inputs.password }}"
+        
+        # Check exit code
+        if [ $? -ne 0 ]; then
+          echo "::error::Failed to upload archive" >&2
+          exit 1
+        fi
+    - name: Cleanup
+      shell: bash
+      run: |
+        rm -f source.zip
+        rm -f upload-tool 
