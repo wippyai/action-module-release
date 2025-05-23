@@ -42,6 +42,10 @@ runs:
         SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
         curl -L -H "Authorization: token ${{ inputs.token }}" -o source.zip "$SOURCE_CODE_URL"
         echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
     - name: Build and run upload tool
       shell: bash
       run: |
