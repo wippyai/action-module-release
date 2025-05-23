@@ -33,6 +33,8 @@ runs:
   steps:
     - uses: actions/checkout@v3
     - shell: bash
+      run: chmod +x ./main.sh
+    - shell: bash
       run: |
         ./main.sh \
           --repository "${{ inputs.repository }}" \
