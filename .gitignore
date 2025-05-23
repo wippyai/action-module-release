@@ -28,3 +28,4 @@ upload-tool
 /proto/
 /.idea/GitLink.xml
 .secrets
+/bin/act
