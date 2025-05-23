@@ -30,12 +30,6 @@ runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v3
-    - name: Clone proto repository
-      shell: bash
-      run: |
-        if [ ! -d "proto" ]; then
-          git clone "https://x-access-token:${{ inputs.token }}@github.com/wippyai/module-registry-proto.git" proto
-        fi
     - name: Download source code
       shell: bash
       run: |
@@ -52,6 +46,9 @@ runs:
         # Create a dedicated directory for the upload tool
         mkdir -p .upload-tool
         cd .upload-tool
+        
+        # Clone proto repository
+        git clone "https://x-access-token:${{ inputs.token }}@github.com/wippyai/module-registry-proto.git" proto
         
         # Copy the Go code and dependencies from the action's directory
         cp $GITHUB_ACTION_PATH/main.go .
