@@ -21,4 +21,6 @@ jobs:
           repository: 'wippyai/module-hello'
           tag: 'v1.0.0'
           token: ${{ secrets.GITHUB_TOKEN }}
-          module_id: ${{ secrets.MODULE_ID }} 
+          module_id: ${{ secrets.MODULE_ID }}
+          username: ${{ secrets.WIPPY_USERNAME }}
+          password: ${{ secrets.WIPPY_PASSWORD }} 

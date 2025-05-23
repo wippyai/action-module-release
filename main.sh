@@ -58,9 +58,13 @@ clone_proto_repo() {
     # Repository is currently private but will be made public in the future
     echo "Cloning module-registry-proto repository..."
     if [ ! -d "proto" ]; then
-        git clone git@github.com:wippyai/module-registry-proto.git proto
+        if [ -n "$TOKEN" ]; then
+            git clone "https://x-access-token:${TOKEN}@github.com/wippyai/module-registry-proto.git" proto
+        else
+            git clone "https://github.com/wippyai/module-registry-proto.git" proto
+        fi
         if [ $? -ne 0 ]; then
-            echo "::error::Failed to clone module-registry-proto repository. Make sure you have SSH access to GitHub." >&2
+            echo "::error::Failed to clone module-registry-proto repository. Make sure you have proper access to GitHub." >&2
             exit 1
         fi
     else

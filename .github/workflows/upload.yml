@@ -15,6 +15,7 @@ env:
   MODULE_ID: ${{ secrets.MODULE_ID }}
   USERNAME: ${{ secrets.USERNAME }}
   PASSWORD: ${{ secrets.PASSWORD }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -30,6 +31,7 @@ jobs:
           if ! ./main.sh \
             --repository "${{ env.REPOSITORY }}" \
             --tag "${{ github.ref_name }}" \
+            --token "${{ env.GITHUB_TOKEN }}" \
             --module-id "${{ env.MODULE_ID }}" \
             --username "${{ env.USERNAME }}" \
             --password "${{ env.PASSWORD }}"; then
