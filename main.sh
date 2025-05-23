@@ -162,6 +162,10 @@ SOURCE_CODE_URL="https://github.com/$REPOSITORY/archive/refs/tags/$TAG.zip"
 download_source_code "$SOURCE_CODE_URL"
 upload_archive "$MODULE_ID" "$TAG" "$USERNAME" "$PASSWORD"
 
-# Output results
+# Set outputs for GitHub Action
+echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
+
+# Output results for logging
 echo "Found release: $RELEASE_URL"
 echo "Source code available at: $SOURCE_CODE_URL" 
