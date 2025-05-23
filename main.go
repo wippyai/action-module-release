@@ -95,15 +95,14 @@ func main() {
 	case err != nil && strings.Contains(err.Error(), "already_exists"):
 		labelID, err = GetLatestModuleLabelID(ctx, moduleID, tag, basicAuthUser, basicAuthPassword)
 		if err != nil {
-			log.Fatalf("Failed to get latest module label ID: %v", err)
+			log.Printf("Failed to get latest module label ID: %v", err)
 		}
 	case err != nil:
 		log.Fatalf("Failed to create label: %v", err)
 	default:
 		labelID = respCreateLabel.Msg.GetLabel().GetId()
+		fmt.Printf("Successfully created label for module %s: %s\n", labelID, tag)
 	}
-
-	fmt.Printf("Successfully created label for module %s: %s\n", labelID, tag)
 }
 
 func GetLatestModuleLabelID(ctx context.Context, moduleID string, tag string, basicAuthUser string, basicAuthPassword string) (string, error) {
