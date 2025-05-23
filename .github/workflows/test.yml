@@ -24,4 +24,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           module_id: ${{ secrets.MODULE_ID }}
           username: ${{ secrets.WIPPY_USERNAME }}
-          password: ${{ secrets.WIPPY_PASSWORD }} 
+          password: ${{ secrets.WIPPY_PASSWORD }}

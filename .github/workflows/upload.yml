@@ -12,10 +12,11 @@ on:
 
 env:
   REPOSITORY: ${{ vars.REPOSITORY }}
-  MODULE_ID: ${{ secrets.MODULE_ID }}
-  USERNAME: ${{ secrets.USERNAME }}
-  PASSWORD: ${{ secrets.PASSWORD }}
+  TAG: ${{ vars.ref_name }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  MODULE_ID: ${{ secrets.MODULE_ID }}
+  USERNAME: ${{ secrets.WIPPY_USERNAME }}
+  PASSWORD: ${{ secrets.WIPPY_PASSWORD }}
 
 jobs:
   build:
@@ -31,7 +32,7 @@ jobs:
         run: |
           if ! ./main.sh \
             --repository "${{ env.REPOSITORY }}" \
-            --tag "${{ github.ref_name }}" \
+            --tag "${{ env.TAG }}" \
             --token "${{ env.GITHUB_TOKEN }}" \
             --module-id "${{ env.MODULE_ID }}" \
             --username "${{ env.USERNAME }}" \
