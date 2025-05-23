@@ -15,6 +15,12 @@ inputs:
   module_id:
     description: 'The UUID of the module to upload to'
     required: true
+  username:
+    description: 'Username for modules.wippy.ai authentication'
+    required: true
+  password:
+    description: 'Password for modules.wippy.ai authentication'
+    required: true
 
 outputs:
   release_url:
@@ -28,9 +34,10 @@ runs:
     - uses: actions/checkout@v3
     - shell: bash
       run: |
-        chmod +x scripts/*.sh
-        ./scripts/main.sh \
+        ./main.sh \
           --repository "${{ inputs.repository }}" \
           --tag "${{ inputs.tag }}" \
           --token "${{ inputs.token }}" \
-          --module-id "${{ inputs.module_id }}" 
+          --module-id "${{ inputs.module_id }}" \
+          --username "${{ inputs.username }}" \
+          --password "${{ inputs.password }}" 

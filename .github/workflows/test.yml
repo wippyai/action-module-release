@@ -9,8 +9,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    environment: test
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
       
       - name: Install jq
         run: sudo apt-get install -y jq
@@ -20,5 +26,7 @@ jobs:
         with:
           repository: 'wippyai/module-hello'
           tag: 'v1.0.0'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          module_id: ${{ secrets.MODULE_ID }} 
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          module_id: ${{ secrets.MODULE_ID }}
+          username: ${{ secrets.WIPPY_USERNAME }}
+          password: ${{ secrets.WIPPY_PASSWORD }}

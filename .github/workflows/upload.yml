@@ -1,0 +1,39 @@
+name: Build and Test Upload Tool
+
+on:
+  push:
+    paths:
+      - 'main.sh'
+      - '.github/workflows/upload.yml'
+  pull_request:
+    paths:
+      - 'main.sh'
+      - '.github/workflows/upload.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: test
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+      
+      - name: Install jq
+        run: sudo apt-get install -y jq
+      
+      - name: Upload module archive
+        run: |
+          if ! ./main.sh \
+            --repository 'wippyai/module-hello' \
+            --tag 'v1.0.0' \
+            --token ${{ secrets.PRIVATE_REPO_TOKEN }} \
+            --module-id ${{ secrets.MODULE_ID }} \
+            --username ${{ secrets.WIPPY_USERNAME }} \
+            --password ${{ secrets.WIPPY_PASSWORD }}; then
+            echo "::error::Failed to upload module archive"
+            exit 1
+          fi 
