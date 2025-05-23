@@ -46,21 +46,30 @@ runs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.24'
-    - name: Build and run upload tool
+    - name: Set up upload tool
       shell: bash
       run: |
+        # Create a dedicated directory for the upload tool
+        mkdir -p .upload-tool
+        cd .upload-tool
+        
+        # Copy the Go code and dependencies from the action's directory
+        cp $GITHUB_ACTION_PATH/main.go .
+        cp $GITHUB_ACTION_PATH/go.mod .
+        cp $GITHUB_ACTION_PATH/go.sum .
+        
         # Build the upload tool
         go mod tidy
         go build -o upload-tool
         
         # Debug information
         echo "Debug: Uploading archive for module ID: ${{ inputs.module_id }}"
-        echo "Debug: Archive size: $(stat -c %s source.zip) bytes"
+        echo "Debug: Archive size: $(stat -c %s ../source.zip) bytes"
         echo "Debug: Checking upload-tool location:"
         ls -la upload-tool
         
         # Run the upload tool
-        ./upload-tool "${{ inputs.module_id }}" "${{ inputs.tag }}" "source.zip" "${{ inputs.username }}" "${{ inputs.password }}"
+        ./upload-tool "${{ inputs.module_id }}" "${{ inputs.tag }}" "../source.zip" "${{ inputs.username }}" "${{ inputs.password }}"
         
         # Check exit code
         if [ $? -ne 0 ]; then
@@ -71,4 +80,4 @@ runs:
       shell: bash
       run: |
         rm -f source.zip
-        rm -f upload-tool 
+        rm -rf .upload-tool 
