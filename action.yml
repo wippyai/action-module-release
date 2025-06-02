@@ -47,9 +47,6 @@ runs:
         mkdir -p .upload-tool
         cd .upload-tool
         
-        # Clone proto repository
-        git clone "https://x-access-token:${{ inputs.token }}@github.com/wippyai/module-registry-proto.git" proto
-        
         # Copy the Go code and dependencies from the action's directory
         cp $GITHUB_ACTION_PATH/main.go .
         cp $GITHUB_ACTION_PATH/go.mod .
