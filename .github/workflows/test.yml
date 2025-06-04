@@ -23,12 +23,6 @@ jobs:
         with:
           go-version: '1.24'
       
-      - name: Clone proto repository
-        run: |
-          if [ ! -d "proto" ]; then
-            git clone "https://x-access-token:${{ secrets.PRIVATE_REPO_TOKEN }}@github.com/wippyai/module-registry-proto.git" proto
-          fi
-      
       - name: Download source code
         run: |
           SOURCE_CODE_URL="https://github.com/wippyai/module-hello/archive/refs/tags/v1.0.0.zip"

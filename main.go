@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	pb "github.com/wippyai/module-registry-proto/gen/registry/module/v1"
-	modulev1connect "github.com/wippyai/module-registry-proto/gen/registry/module/v1/modulev1connect"
+	pb "github.com/wippyai/module-registry-proto-go/registry/module/v1"
+	modulev1connect "github.com/wippyai/module-registry-proto-go/registry/module/v1/modulev1connect"
 )
 
 func main() {
