@@ -1,30 +1,30 @@
-name: 'Module Release Locator'
-description: 'Locates and processes release source code from GitHub repositories'
-author: 'WippyAI'
+name: "Module Release Locator"
+description: "Locates and processes release source code from GitHub repositories"
+author: "WippyAI"
 
 inputs:
   repository:
-    description: 'The repository to locate release from (e.g., wippyai/module-hello)'
+    description: "The repository to locate release from (e.g., wippyai/module-hello)"
     required: true
   tag:
-    description: 'The release tag to locate (e.g., v1.0.0)'
+    description: "The release tag to locate (e.g., v1.0.0)"
     required: true
   token:
-    description: 'GitHub token for authentication'
+    description: "GitHub token for authentication"
     required: true
   module_id:
-    description: 'The UUID of the module to upload to'
+    description: "The UUID of the module to upload to"
     required: true
   username:
-    description: 'Username for modules.wippy.ai authentication'
+    description: "Username for modules.wippy.ai authentication"
     required: true
   password:
-    description: 'Password for modules.wippy.ai authentication'
+    description: "Password for modules.wippy.ai authentication"
     required: true
 
 outputs:
   source_code_url:
-    description: 'URL of the release source code'
+    description: "URL of the release source code"
 
 runs:
   using: "composite"
@@ -36,42 +36,72 @@ runs:
         SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
         curl -L -H "Authorization: token ${{ inputs.token }}" -o source.zip "$SOURCE_CODE_URL"
         echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-    - name: Set up upload tool
+    - name: Download packcli binary
       shell: bash
       run: |
-        # Create a dedicated directory for the upload tool
-        mkdir -p .upload-tool
-        cd .upload-tool
-        
-        # Copy the Go code and dependencies from the action's directory
-        cp $GITHUB_ACTION_PATH/main.go .
-        cp $GITHUB_ACTION_PATH/go.mod .
-        cp $GITHUB_ACTION_PATH/go.sum .
-        
-        # Build the upload tool
-        go mod tidy
-        go build -o upload-tool
-        
+        # Download the packcli binary from the specified URL
+        curl -L -H "Authorization: token ${{ inputs.token }}" -o packcli-linux-amd64 "https://github.com/wippyai/wippy-releases/raw/refs/heads/main/releases/packcli/feature/2025-09-24-09-33/packcli-linux-amd64"
+
+        # Make the binary executable
+        chmod +x packcli-linux-amd64
+
+        # Verify the binary was downloaded and is executable
+        ls -la packcli-linux-amd64
+        file packcli-linux-amd64
+    - name: Prepare module for publishing
+      shell: bash
+      run: |
+        # Create module directory structure
+        mkdir -p module-publish/src
+
+        # Extract source code to src directory
+        unzip -q source.zip -d temp-extract
+        # Move contents from extracted directory to src
+        find temp-extract -mindepth 1 -maxdepth 1 -exec mv {} module-publish/src/ \;
+        rmdir temp-extract
+
+        # Create packcli.yaml configuration
+        cat > module-publish/packcli.yaml << EOF
+        name: ${{ inputs.module_id }}
+        version: ${{ inputs.tag }}
+        description: "Module published from GitHub release"
+        dir: src
+        ignore:
+          - "*.tmp"
+          - "*.log"
+          - ".git/"
+          - ".gitlab/"
+          - ".docker/"
+        EOF
+
+        echo "Debug: Module structure prepared:"
+        ls -la module-publish/
+        ls -la module-publish/src/
+    - name: Publish module using packcli
+      shell: bash
+      run: |
+        cd module-publish
+
         # Debug information
-        echo "Debug: Uploading archive for module ID: ${{ inputs.module_id }}"
-        echo "Debug: Archive size: $(stat -c %s ../source.zip) bytes"
-        echo "Debug: Checking upload-tool location:"
-        ls -la upload-tool
-        
-        # Run the upload tool
-        ./upload-tool "${{ inputs.module_id }}" "${{ inputs.tag }}" "../source.zip" "${{ inputs.username }}" "${{ inputs.password }}"
-        
+        echo "Debug: Publishing module: ${{ inputs.module_id }}"
+        echo "Debug: Version: ${{ inputs.tag }}"
+        echo "Debug: Checking packcli binary:"
+        ls -la ../packcli-linux-amd64
+
+        # Create module if it doesn't exist
+        ../packcli-linux-amd64 module create --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive || true
+
+        # Publish module version
+        ../packcli-linux-amd64 module publish --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive --version "${{ inputs.tag }}" --message "Published from GitHub release ${{ inputs.tag }}" patch
+
         # Check exit code
         if [ $? -ne 0 ]; then
-          echo "::error::Failed to upload archive" >&2
+          echo "::error::Failed to publish module" >&2
           exit 1
         fi
     - name: Cleanup
       shell: bash
       run: |
         rm -f source.zip
-        rm -rf .upload-tool 
+        rm -f packcli-linux-amd64
+        rm -rf module-publish
