@@ -1,0 +1,28 @@
+name: Test Module Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository to test'
+        required: true
+        default: 'wippyai/module-hello'
+      tag:
+        description: 'Release tag to test'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  test-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test Module Release Locator
+        uses: ./
+        with:
+          repository: ${{ inputs.repository }}
+          tag: ${{ inputs.tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          module_id: "igor-test-3/test-release"
+          username: ${{ secrets.WIPPY_USERNAME }}
+          password: ${{ secrets.WIPPY_PASSWORD }}

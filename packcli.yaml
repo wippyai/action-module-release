@@ -1,0 +1,10 @@
+name: igor-test-2/module-test
+dir: test-module
+version: 1.0.0
+description: test module for github action module release
+ignore:
+  - "*.tmp"
+  - "*.log"
+  - ".git/"
+  - ".gitlab/"
+  - ".docker/"
