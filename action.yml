@@ -36,16 +36,16 @@ runs:
         SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
         curl -L -H "Authorization: token ${{ inputs.token }}" -o source.zip "$SOURCE_CODE_URL"
         echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
-    - name: Download packcli binary
+    - name: Setup packcli binary
       shell: bash
       run: |
-        # Download the packcli binary from the specified URL
-        curl -L -H "Authorization: token ${{ inputs.token }}" -o packcli-linux-amd64 "https://github.com/wippyai/wippy-releases/raw/refs/heads/main/releases/packcli/feature/2025-09-24-09-33/packcli-linux-amd64"
+        # Copy the packcli binary from the action repository
+        cp $GITHUB_ACTION_PATH/packcli-linux-amd64 ./packcli-linux-amd64
 
         # Make the binary executable
         chmod +x packcli-linux-amd64
 
-        # Verify the binary was downloaded and is executable
+        # Verify the binary is available and executable
         ls -la packcli-linux-amd64
         file packcli-linux-amd64
     - name: Prepare module for publishing
