@@ -83,15 +83,15 @@ runs:
         cd module-publish
 
         # Debug information
-        echo "Debug: Publishing module: ${{ inputs.module_id }}"
+        echo "Debug: Publishing module from packcli.yaml"
         echo "Debug: Version: ${{ inputs.tag }}"
         echo "Debug: Checking packcli binary:"
         ls -la ../packcli-linux-amd64
 
-        # Create module if it doesn't exist
+        # Create module if it doesn't exist (reads module_id from packcli.yaml)
         ../packcli-linux-amd64 module create --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive || true
 
-        # Publish module version
+        # Publish module version (reads module_id from packcli.yaml)
         ../packcli-linux-amd64 module publish --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive --version "${{ inputs.tag }}" --message "Published from GitHub release ${{ inputs.tag }}" patch
 
         # Check exit code
