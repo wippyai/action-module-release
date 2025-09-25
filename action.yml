@@ -60,12 +60,13 @@ runs:
         find temp-extract -mindepth 1 -maxdepth 1 -exec mv {} module-publish/src/ \;
         rmdir temp-extract
 
-        # Copy packcli.yaml from repository root if it exists
-        if [ -f "packcli.yaml" ]; then
-          echo "Using packcli.yaml from repository root"
-          cp packcli.yaml module-publish/
+        # Look for packcli.yaml in the extracted source code
+        PACKCLI_YAML_PATH=$(find module-publish/src -name "packcli.yaml" -type f | head -1)
+        if [ -n "$PACKCLI_YAML_PATH" ]; then
+          echo "Using packcli.yaml from module repository: $PACKCLI_YAML_PATH"
+          cp "$PACKCLI_YAML_PATH" module-publish/
         else
-          echo "No packcli.yaml found in repository root"
+          echo "No packcli.yaml found in module repository"
           if [ -n "${{ inputs.module_id }}" ]; then
             echo "Creating packcli.yaml with provided module_id: ${{ inputs.module_id }}"
             cat > module-publish/packcli.yaml << EOF
@@ -81,7 +82,7 @@ runs:
           - ".docker/"
         EOF
           else
-            echo "::error::No packcli.yaml found in repository root and no module_id provided"
+            echo "::error::No packcli.yaml found in module repository and no module_id provided"
             exit 1
           fi
         fi
