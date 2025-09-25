@@ -1,5 +1,5 @@
 name: "Module Release Locator"
-description: "Locates and processes release source code from GitHub repositories. Requires packcli.yaml in repository root."
+description: "Locates and processes release source code from GitHub repositories. Uses packcli.yaml from repository root or falls back to module_id parameter."
 author: "WippyAI"
 
 inputs:
@@ -12,6 +12,9 @@ inputs:
   token:
     description: "GitHub token for authentication"
     required: true
+  module_id:
+    description: "The module ID to use if packcli.yaml is not found in repository root (fallback)"
+    required: false
   username:
     description: "Username for modules.wippy.ai authentication"
     required: true
@@ -57,13 +60,30 @@ runs:
         find temp-extract -mindepth 1 -maxdepth 1 -exec mv {} module-publish/src/ \;
         rmdir temp-extract
 
-        # Copy packcli.yaml from repository root (required)
+        # Copy packcli.yaml from repository root if it exists
         if [ -f "packcli.yaml" ]; then
           echo "Using packcli.yaml from repository root"
           cp packcli.yaml module-publish/
         else
-          echo "::error::packcli.yaml is required in repository root"
-          exit 1
+          echo "No packcli.yaml found in repository root"
+          if [ -n "${{ inputs.module_id }}" ]; then
+            echo "Creating packcli.yaml with provided module_id: ${{ inputs.module_id }}"
+            cat > module-publish/packcli.yaml << EOF
+        name: ${{ inputs.module_id }}
+        version: ${{ inputs.tag }}
+        description: "Module published from GitHub release"
+        dir: src
+        ignore:
+          - "*.tmp"
+          - "*.log"
+          - ".git/"
+          - ".gitlab/"
+          - ".docker/"
+        EOF
+          else
+            echo "::error::No packcli.yaml found in repository root and no module_id provided"
+            exit 1
+          fi
         fi
 
         echo "Debug: Module structure prepared:"
