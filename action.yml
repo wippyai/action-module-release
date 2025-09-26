@@ -1,5 +1,5 @@
 name: "Module Release Locator"
-description: "Locates and processes release source code from GitHub repositories. Uses packcli.yaml from repository root or falls back to module_id parameter."
+description: "Locates and processes release source code from GitHub repositories. Requires packcli.yaml in module repository."
 author: "WippyAI"
 
 inputs:
@@ -12,9 +12,6 @@ inputs:
   token:
     description: "GitHub token for authentication"
     required: true
-  module_id:
-    description: "The module ID to use if packcli.yaml is not found in repository root (fallback)"
-    required: false
   username:
     description: "Username for modules.wippy.ai authentication"
     required: true
@@ -60,31 +57,14 @@ runs:
         find temp-extract -mindepth 1 -maxdepth 1 -exec mv {} module-publish/src/ \;
         rmdir temp-extract
 
-        # Look for packcli.yaml in the extracted source code
+        # Look for packcli.yaml in the extracted source code (required)
         PACKCLI_YAML_PATH=$(find module-publish/src -name "packcli.yaml" -type f | head -1)
         if [ -n "$PACKCLI_YAML_PATH" ]; then
           echo "Using packcli.yaml from module repository: $PACKCLI_YAML_PATH"
           cp "$PACKCLI_YAML_PATH" module-publish/
         else
-          echo "No packcli.yaml found in module repository"
-          if [ -n "${{ inputs.module_id }}" ]; then
-            echo "Creating packcli.yaml with provided module_id: ${{ inputs.module_id }}"
-            cat > module-publish/packcli.yaml << EOF
-        name: ${{ inputs.module_id }}
-        version: ${{ inputs.tag }}
-        description: "Module published from GitHub release"
-        dir: src
-        ignore:
-          - "*.tmp"
-          - "*.log"
-          - ".git/"
-          - ".gitlab/"
-          - ".docker/"
-        EOF
-          else
-            echo "::error::No packcli.yaml found in module repository and no module_id provided"
-            exit 1
-          fi
+          echo "::error::packcli.yaml is required in module repository"
+          exit 1
         fi
 
         echo "Debug: Module structure prepared:"
