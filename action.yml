@@ -33,19 +33,21 @@ runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v3
-    - name: Download source code
+    - name: Clone repository at specific tag
       shell: bash
       run: |
-        SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
-        curl -L -H "Authorization: token ${{ inputs.token }}" \
-          -o source.zip "$SOURCE_CODE_URL"
+        # Clone the repository at the specific tag
+        git clone --depth 1 --branch "${{ inputs.tag }}" \
+          "https://github.com/${{ inputs.repository }}.git" source-repo
 
-        # Check if download was successful
-        if [ ! -f source.zip ] || [ ! -s source.zip ]; then
-          echo "::error::Failed to download source code from $SOURCE_CODE_URL"
+        # Check if clone was successful
+        if [ ! -d "source-repo" ]; then
+          echo "::error::Failed to clone repository ${{ inputs.repository }} at tag ${{ inputs.tag }}"
           exit 1
         fi
 
+        # Set source code URL for output
+        SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
         echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
     - name: Setup packcli binary
       shell: bash
@@ -65,12 +67,9 @@ runs:
         # Create module directory structure
         mkdir -p module-publish/src
 
-        # Extract source code directly to src directory
-        unzip -q source.zip -d module-publish/src
-        if [ $? -ne 0 ]; then
-          echo "::error::Failed to extract source code from source.zip"
-          exit 1
-        fi
+        # Copy source code from cloned repository to src directory
+        cp -r source-repo/* module-publish/src/ 2>/dev/null || true
+        cp -r source-repo/.[^.]* module-publish/src/ 2>/dev/null || true
 
         # Look for existing packcli.yaml in the specified directory
         YAML_PATH="module-publish/src/${{ inputs.directory }}/packcli.yaml"
@@ -116,6 +115,6 @@ runs:
     - name: Cleanup
       shell: bash
       run: |
-        rm -f source.zip
+        rm -rf source-repo
         rm -f packcli-linux-amd64
         rm -rf module-publish
