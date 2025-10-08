@@ -14,9 +14,6 @@ inputs:
   token:
     description: "GitHub token for authentication"
     required: true
-  module_id:
-    description: "The UUID of the module to upload to"
-    required: true
   username:
     description: "Username for modules.wippy.ai authentication"
     required: true
@@ -99,7 +96,7 @@ runs:
         cd module-publish
 
         # Debug information
-        echo "Debug: Publishing module: ${{ inputs.module_id }}"
+        echo "Debug: Publishing module from packcli.yaml"
         echo "Debug: Version: ${{ inputs.tag }}"
         echo "Debug: Checking packcli binary:"
         ls -la ../packcli-linux-amd64
