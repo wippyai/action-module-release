@@ -69,8 +69,14 @@ runs:
         fi
 
         # Set packcli path and version
-        PACKCLI_PATH="../../packcli-linux-amd64"
+        PACKCLI_PATH="$(pwd | sed 's|source-repo.*|packcli-linux-amd64|')"
         VERSION_TAG="${{ inputs.tag || github.ref_name }}"
+
+        # Debug information
+        echo "Debug: Current directory: $(pwd)"
+        echo "Debug: Packcli path: $PACKCLI_PATH"
+        echo "Debug: Checking packcli binary:"
+        ls -la "$PACKCLI_PATH"
 
         # Determine if it's automatic increment or semantic version
         if [[ "$VERSION_TAG" =~ ^(major|minor|patch|tag)$ ]]; then
