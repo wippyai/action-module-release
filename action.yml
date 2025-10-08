@@ -64,18 +64,12 @@ runs:
     - name: Prepare module for publishing
       shell: bash
       run: |
-        # Create module directory structure
-        mkdir -p module-publish/src
+        # Change to the specified directory
+        cd "source-repo/${{ inputs.directory }}"
 
-        # Copy source code from cloned repository to src directory
-        cp -r source-repo/* module-publish/src/ 2>/dev/null || true
-        cp -r source-repo/.[^.]* module-publish/src/ 2>/dev/null || true
-
-        # Look for existing packcli.yaml in the specified directory
-        YAML_PATH="module-publish/src/${{ inputs.directory }}/packcli.yaml"
-        if [ -f "$YAML_PATH" ]; then
-          echo "Found existing packcli.yaml in ${{ inputs.directory }}/ directory"
-          cp "$YAML_PATH" module-publish/packcli.yaml
+        # Look for packcli.yaml in the current directory
+        if [ -f "packcli.yaml" ]; then
+          echo "Found packcli.yaml in ${{ inputs.directory }}/ directory"
         else
           echo "::error::No packcli.yaml found in ${{ inputs.directory }}/ directory"
           echo "::error::Expected packcli.yaml file in the specified directory"
@@ -83,26 +77,31 @@ runs:
         fi
 
         echo "Debug: Module structure prepared:"
-        ls -la module-publish/
-        ls -la module-publish/src/
+        ls -la .
     - name: Publish module using packcli
       shell: bash
       run: |
-        cd module-publish
+        # Change to the specified directory
+        cd "source-repo/${{ inputs.directory }}"
+
+        # Get absolute path to packcli binary
+        PACKCLI_PATH="$(pwd | sed 's|source-repo.*|packcli-linux-amd64|')"
 
         # Debug information
         echo "Debug: Publishing module from packcli.yaml"
         echo "Debug: Version: ${{ inputs.tag }}"
+        echo "Debug: Current directory: $(pwd)"
+        echo "Debug: Packcli path: $PACKCLI_PATH"
         echo "Debug: Checking packcli binary:"
-        ls -la ../packcli-linux-amd64
+        ls -la "$PACKCLI_PATH"
 
         # Create module if it doesn't exist
-        ../packcli-linux-amd64 module create \
+        "$PACKCLI_PATH" module create \
           --auth-basic "${{ inputs.username }}:${{ inputs.password }}" \
           --no-interactive || true
 
         # Publish module version
-        ../packcli-linux-amd64 module publish \
+        "$PACKCLI_PATH" module publish \
           --auth-basic "${{ inputs.username }}:${{ inputs.password }}" \
           --no-interactive --version "${{ inputs.tag }}" \
           --message "Published from GitHub release ${{ inputs.tag }}" patch
@@ -117,4 +116,3 @@ runs:
       run: |
         rm -rf source-repo
         rm -f packcli-linux-amd64
-        rm -rf module-publish
