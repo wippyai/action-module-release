@@ -1,10 +1,12 @@
+---
 name: "Module Release Locator"
-description: "Locates and processes release source code from GitHub repositories. Requires packcli.yaml in module repository."
+description: |
+  "Locates and processes release source code from GitHub repositories"
 author: "WippyAI"
-
 inputs:
   repository:
-    description: "The repository to locate release from (e.g., wippyai/module-hello)"
+    description: |
+      "The repository to locate release from (e.g., wippyai/module-hello)"
     required: true
   tag:
     description: "The release tag to locate (e.g., v1.0.0)"
@@ -18,6 +20,10 @@ inputs:
   password:
     description: "Password for modules.wippy.ai authentication"
     required: true
+  directory:
+    description: "The directory to release files"
+    required: false
+    default: "."
 
 outputs:
   source_code_url:
@@ -31,7 +37,15 @@ runs:
       shell: bash
       run: |
         SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
-        curl -L -H "Authorization: token ${{ inputs.token }}" -o source.zip "$SOURCE_CODE_URL"
+        curl -L -H "Authorization: token ${{ inputs.token }}" \
+          -o source.zip "$SOURCE_CODE_URL"
+
+        # Check if download was successful
+        if [ ! -f source.zip ] || [ ! -s source.zip ]; then
+          echo "::error::Failed to download source code from $SOURCE_CODE_URL"
+          exit 1
+        fi
+
         echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
     - name: Setup packcli binary
       shell: bash
@@ -53,25 +67,29 @@ runs:
 
         # Extract source code to src directory
         unzip -q source.zip -d temp-extract
+        if [ $? -ne 0 ]; then
+          echo "::error::Failed to extract source code from source.zip"
+          exit 1
+        fi
+
         # Move contents from extracted directory to src
-        find temp-extract -mindepth 1 -maxdepth 1 -exec mv {} module-publish/src/ \;
+        # Move contents from extracted directory to src
         rmdir temp-extract
 
-        # Look for packcli.yaml in the extracted source code (required)
-        PACKCLI_YAML_PATH=$(find module-publish/src -name "packcli.yaml" -type f | head -1)
-        if [ -n "$PACKCLI_YAML_PATH" ]; then
-          echo "Using packcli.yaml from module repository: $PACKCLI_YAML_PATH"
-          cp "$PACKCLI_YAML_PATH" module-publish/
+        # Look for existing packcli.yaml in the specified directory
+        YAML_PATH="module-publish/src/${{ inputs.directory }}/packcli.yaml"
+        if [ -f "$YAML_PATH" ]; then
+          echo "Found existing packcli.yaml in ${{ inputs.directory }}/ directory"
+          cp "$YAML_PATH" module-publish/packcli.yaml
         else
-          echo "::error::packcli.yaml is required in module repository"
+          echo "::error::No packcli.yaml found in ${{ inputs.directory }}/ directory"
+          echo "::error::Expected packcli.yaml file in the specified directory"
           exit 1
         fi
 
         echo "Debug: Module structure prepared:"
         ls -la module-publish/
         ls -la module-publish/src/
-        echo "Debug: packcli.yaml content:"
-        cat module-publish/packcli.yaml
     - name: Publish module using packcli
       shell: bash
       run: |
@@ -83,11 +101,16 @@ runs:
         echo "Debug: Checking packcli binary:"
         ls -la ../packcli-linux-amd64
 
-        # Create module if it doesn't exist (reads module_id from packcli.yaml)
-        ../packcli-linux-amd64 module create --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive || true
+        # Create module if it doesn't exist
+        ../packcli-linux-amd64 module create \
+          --auth-basic "${{ inputs.username }}:${{ inputs.password }}" \
+          --no-interactive || true
 
-        # Publish module version (reads module_id from packcli.yaml)
-        ../packcli-linux-amd64 module publish --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive --version "${{ inputs.tag }}" --message "Published from GitHub release ${{ inputs.tag }}" patch
+        # Publish module version
+        ../packcli-linux-amd64 module publish \
+          --auth-basic "${{ inputs.username }}:${{ inputs.password }}" \
+          --no-interactive --version "${{ inputs.tag }}" \
+          --message "Published from GitHub release ${{ inputs.tag }}" patch
 
         # Check exit code
         if [ $? -ne 0 ]; then
