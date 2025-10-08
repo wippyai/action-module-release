@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       repository:
-        description: 'Repository to test'
+        description: "Repository to test"
         required: true
-        default: 'wippyai/module-hello'
+        default: "wippyai/module-hello"
       tag:
-        description: 'Release tag to test'
+        description: "Release tag to test"
         required: true
-        default: 'v1.0.0'
+        default: "v1.0.0"
 
 jobs:
   test-release:
@@ -23,6 +23,6 @@ jobs:
           repository: ${{ inputs.repository }}
           tag: ${{ inputs.tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          module_id: "igor-test-3/test-release"
           username: ${{ secrets.WIPPY_USERNAME }}
           password: ${{ secrets.WIPPY_PASSWORD }}
+          directory: "."

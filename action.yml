@@ -65,16 +65,12 @@ runs:
         # Create module directory structure
         mkdir -p module-publish/src
 
-        # Extract source code to src directory
-        unzip -q source.zip -d temp-extract
+        # Extract source code directly to src directory
+        unzip -q source.zip -d module-publish/src
         if [ $? -ne 0 ]; then
           echo "::error::Failed to extract source code from source.zip"
           exit 1
         fi
-
-        # Move contents from extracted directory to src
-        # Move contents from extracted directory to src
-        rmdir temp-extract
 
         # Look for existing packcli.yaml in the specified directory
         YAML_PATH="module-publish/src/${{ inputs.directory }}/packcli.yaml"
