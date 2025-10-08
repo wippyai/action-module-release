@@ -4,22 +4,16 @@ description: |
   "Locates and processes release source code from GitHub repositories"
 author: "WippyAI"
 inputs:
-  repository:
-    description: |
-      "The repository to locate release from (e.g., wippyai/module-hello)"
-    required: true
-  tag:
-    description: "The release tag to locate (e.g., v1.0.0)"
-    required: true
-  token:
-    description: "GitHub token for authentication"
-    required: true
   username:
     description: "Username for modules.wippy.ai authentication"
     required: true
   password:
     description: "Password for modules.wippy.ai authentication"
     required: true
+  tag:
+    description: "The version tag to publish (defaults to current release tag)"
+    required: false
+    default: ${{ github.ref_name }}
   directory:
     description: "The directory to release files"
     required: false
@@ -28,26 +22,28 @@ inputs:
 outputs:
   source_code_url:
     description: "URL of the release source code"
+    value: ${{ steps.clone.outputs.source_code_url }}
 
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v3
-    - name: Clone repository at specific tag
+    - name: Clone repository at current tag
+      id: clone
       shell: bash
       run: |
-        # Clone the repository at the specific tag
-        git clone --depth 1 --branch "${{ inputs.tag }}" \
-          "https://github.com/${{ inputs.repository }}.git" source-repo
+        # Clone the repository at the current tag/branch (github.ref_name)
+        git clone --depth 1 --branch "${{ github.ref_name }}" \
+          "https://github.com/${{ github.repository }}.git" source-repo
 
         # Check if clone was successful
         if [ ! -d "source-repo" ]; then
-          echo "::error::Failed to clone repository ${{ inputs.repository }} at tag ${{ inputs.tag }}"
+          echo "::error::Failed to clone repository ${{ github.repository }} at tag ${{ github.ref_name }}"
           exit 1
         fi
 
-        # Set source code URL for output
-        SOURCE_CODE_URL="https://github.com/${{ inputs.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
+        # Set source code URL for output (using the tag we want to publish)
+        SOURCE_CODE_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${{ inputs.tag }}.zip"
         echo "source_code_url=$SOURCE_CODE_URL" >> $GITHUB_OUTPUT
     - name: Setup packcli binary
       shell: bash
@@ -89,7 +85,8 @@ runs:
 
         # Debug information
         echo "Debug: Publishing module from packcli.yaml"
-        echo "Debug: Version: ${{ inputs.tag }}"
+        echo "Debug: Cloned from tag: ${{ github.ref_name }}"
+        echo "Debug: Publishing with version: ${{ inputs.tag }}"
         echo "Debug: Current directory: $(pwd)"
         echo "Debug: Packcli path: $PACKCLI_PATH"
         echo "Debug: Checking packcli binary:"

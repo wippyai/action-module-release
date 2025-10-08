@@ -28,12 +28,9 @@ jobs:
     steps:
       - uses: wippyai/module-release-locator@v1
         with:
-          repository: ${{ github.repository }}
-          tag: ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          module_id: "your-module-uuid"
           username: ${{ secrets.WIPPY_USERNAME }}
           password: ${{ secrets.WIPPY_PASSWORD }}
+          # tag is optional - defaults to current release tag
 ```
 
 ### Local Testing
@@ -62,12 +59,25 @@ chmod +x main.sh
 
 #### Required Parameters
 
-- `--repository`: GitHub repository in format `owner/repo` (e.g., `wippyai/module-hello`)
-- `--tag`: Release tag to locate (e.g., `v1.0.0`)
-- `--token`: GitHub token for authentication
-- `--module-id`: UUID of the module to upload to
-- `--username`: Username for modules.wippy.ai authentication
-- `--password`: Password for modules.wippy.ai authentication
+- `username`: Username for modules.wippy.ai authentication
+- `password`: Password for modules.wippy.ai authentication
+
+#### Optional Parameters
+
+- `tag`: The version tag to publish (defaults to current release tag)
+- `directory`: The directory to release files (default: ".")
+
+#### Automatic Parameters
+
+The action automatically uses:
+- `repository`: Current GitHub repository (`${{ github.repository }}`)
+- `source_tag`: Current release tag for cloning (`${{ github.ref_name }}`)
+
+#### How it works
+
+1. **Clones** the repository from the current tag/branch (`github.ref_name`)
+2. **Publishes** the module with the specified version tag (`inputs.tag`)
+3. This allows you to publish a different version than the one you're currently on
 
 #### Dependencies
 
