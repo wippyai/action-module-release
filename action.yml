@@ -11,9 +11,8 @@ inputs:
     description: "Password for modules.wippy.ai authentication"
     required: true
   tag:
-    description: "The version tag to publish (defaults to current release tag)"
+    description: "The version tag to publish. Supports packcli automatic increments (major/minor/patch/tag) or semantic version format (e.g., v1.0.0, 1.0.0-alpha.1). If not provided, uses github.ref_name."
     required: false
-    default: ${{ github.ref_name }}
   directory:
     description: "The directory to release files"
     required: false
@@ -57,57 +56,39 @@ runs:
         # Verify the binary is available and executable
         ls -la packcli-linux-amd64
         file packcli-linux-amd64
-    - name: Prepare module for publishing
-      shell: bash
-      run: |
-        # Change to the specified directory
-        cd "source-repo/${{ inputs.directory }}"
-
-        # Look for packcli.yaml in the current directory
-        if [ -f "packcli.yaml" ]; then
-          echo "Found packcli.yaml in ${{ inputs.directory }}/ directory"
-        else
-          echo "::error::No packcli.yaml found in ${{ inputs.directory }}/ directory"
-          echo "::error::Expected packcli.yaml file in the specified directory"
-          exit 1
-        fi
-
-        echo "Debug: Module structure prepared:"
-        ls -la .
     - name: Publish module using packcli
       shell: bash
       run: |
         # Change to the specified directory
         cd "source-repo/${{ inputs.directory }}"
 
-        # Get absolute path to packcli binary
-        PACKCLI_PATH="$(pwd | sed 's|source-repo.*|packcli-linux-amd64|')"
-
-        # Debug information
-        echo "Debug: Publishing module from packcli.yaml"
-        echo "Debug: Cloned from tag: ${{ github.ref_name }}"
-        echo "Debug: Publishing with version: ${{ inputs.tag }}"
-        echo "Debug: Current directory: $(pwd)"
-        echo "Debug: Packcli path: $PACKCLI_PATH"
-        echo "Debug: Checking packcli binary:"
-        ls -la "$PACKCLI_PATH"
-
-        # Create module if it doesn't exist
-        "$PACKCLI_PATH" module create \
-          --auth-basic "${{ inputs.username }}:${{ inputs.password }}" \
-          --no-interactive || true
-
-        # Publish module version
-        "$PACKCLI_PATH" module publish \
-          --auth-basic "${{ inputs.username }}:${{ inputs.password }}" \
-          --no-interactive --version "${{ inputs.tag }}" \
-          --message "Published from GitHub release ${{ inputs.tag }}" patch
-
-        # Check exit code
-        if [ $? -ne 0 ]; then
-          echo "::error::Failed to publish module" >&2
+        # Verify packcli.yaml exists
+        if [ ! -f "packcli.yaml" ]; then
+          echo "::error::No packcli.yaml found in ${{ inputs.directory }}/ directory"
           exit 1
         fi
+
+        # Set packcli path and version
+        PACKCLI_PATH="../../packcli-linux-amd64"
+        VERSION_TAG="${{ inputs.tag || github.ref_name }}"
+
+        # Determine if it's automatic increment or semantic version
+        if [[ "$VERSION_TAG" =~ ^(major|minor|patch|tag)$ ]]; then
+          echo "Using packcli automatic increment: $VERSION_TAG"
+          PACKCLI_CMD="$PACKCLI_PATH module publish --auth-basic \"${{ inputs.username }}:${{ inputs.password }}\" --no-interactive --message \"Published from GitHub release ${{ inputs.tag }}\" $VERSION_TAG"
+        else
+          echo "Using semantic version: $VERSION_TAG"
+          PACKCLI_CMD="$PACKCLI_PATH module publish --auth-basic \"${{ inputs.username }}:${{ inputs.password }}\" --no-interactive --version \"$VERSION_TAG\" --message \"Published from GitHub release ${{ inputs.tag }}\""
+        fi
+
+        # Create module if it doesn't exist (ignore errors)
+        $PACKCLI_PATH module create --auth-basic "${{ inputs.username }}:${{ inputs.password }}" --no-interactive || true
+
+        # Publish module
+        eval $PACKCLI_CMD || {
+          echo "::error::Failed to publish module" >&2
+          exit 1
+        }
     - name: Cleanup
       shell: bash
       run: |

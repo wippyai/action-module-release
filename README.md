@@ -30,7 +30,7 @@ jobs:
         with:
           username: ${{ secrets.WIPPY_USERNAME }}
           password: ${{ secrets.WIPPY_PASSWORD }}
-          # tag is optional - defaults to current release tag
+          # tag is optional - uses github.ref_name if not provided
 ```
 
 ### Local Testing
@@ -64,7 +64,7 @@ chmod +x main.sh
 
 #### Optional Parameters
 
-- `tag`: The version tag to publish (defaults to current release tag)
+- `tag`: The version tag to publish. Supports packcli automatic increments (major/minor/patch/tag) or semantic version format (e.g., v1.0.0, 1.0.0-alpha.1). If not provided, uses github.ref_name.
 - `directory`: The directory to release files (default: ".")
 
 #### Automatic Parameters
@@ -78,6 +78,27 @@ The action automatically uses:
 1. **Clones** the repository from the current tag/branch (`github.ref_name`)
 2. **Publishes** the module with the specified version tag (`inputs.tag`)
 3. This allows you to publish a different version than the one you're currently on
+
+#### Version Tag Examples
+
+```yaml
+# Packcli automatic increments (no --version flag):
+tag: "major"      # ✅ packcli module publish major
+tag: "minor"      # ✅ packcli module publish minor  
+tag: "patch"      # ✅ packcli module publish patch
+tag: "tag"        # ✅ packcli module publish tag
+
+# Semantic version tags (with --version flag):
+tag: "v1.0.0"     # ✅ packcli module publish --version "v1.0.0"
+tag: "1.2.3"      # ✅ packcli module publish --version "1.2.3"
+tag: "1.0.0-alpha.1"     # ✅ packcli module publish --version "1.0.0-alpha.1"
+tag: "1.0.0+build.123"   # ✅ packcli module publish --version "1.0.0+build.123"
+tag: "v2.0.0-alpha.1+build.123"  # ✅ packcli module publish --version "v2.0.0-alpha.1+build.123"
+
+# Invalid tags (will use fallback):
+tag: "latest"     # ❌ Will use github.ref_name or default to tag
+tag: "dev"        # ❌ Will use github.ref_name or default to tag
+```
 
 #### Dependencies
 
